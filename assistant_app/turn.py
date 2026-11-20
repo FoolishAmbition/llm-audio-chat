@@ -10,7 +10,10 @@ from PySide6.QtCore import QThread, Signal
 from .ollama import choose_lookup, generate_reply
 from .speech import for_whisper, load_recognizer, play_reply, transcribe
 from .transcript import spoken_text
-from .web_search import FORECAST_SOURCE, search_web, singapore_tomorrow, source_links
+from .web_search import (
+    FORECAST_SOURCE, search_web, singapore_headlines, singapore_tomorrow,
+    source_links, without_source_section,
+)
 
 
 @dataclass(frozen=True)
@@ -77,9 +80,13 @@ class AssistantWorker(QThread):
                     self.status.emit("Checking the Singapore weather forecast…")
                     reply = singapore_tomorrow()
                     sources = [{"url": FORECAST_SOURCE}]
-                elif reply is None and route == "search":
+                elif reply is None and route == "singapore_headlines":
+                    self.status.emit("Checking CNA Singapore headlines…")
+                    sources = singapore_headlines()
+                    reply = "Here are recent Singapore headlines from CNA."
+                elif reply is None and route in ("search", "news"):
                     self.status.emit("Searching the web…")
-                    sources = search_web(text)
+                    sources = search_web(text, news=route == "news")
             except RuntimeError as error:
                 reply = str(error)
             if self.isInterruptionRequested():
@@ -91,10 +98,15 @@ class AssistantWorker(QThread):
                 )
             if self.isInterruptionRequested():
                 return
+            if sources:
+                reply = without_source_section(reply)
             self.message.emit("assistant", reply + source_links(sources) if sources else reply)
             if self.recording is not None and not self.stop_audio.is_set():
                 self.status.emit("Speaking…")
-                play_reply(spoken_text(reply), self.settings.voice, self.stop_audio)
+                speech = spoken_text(reply)
+                if route == "singapore_headlines" and sources:
+                    speech += " " + ". ".join(source["title"] for source in sources)
+                play_reply(speech, self.settings.voice, self.stop_audio)
             self.status.emit("Ready")
         except Exception as error:
             self.status.emit(f"Could not finish the turn: {error}")

@@ -22,8 +22,10 @@ def choose_lookup(question: str) -> str:
     instructions = (
         "Classify the user's question for an assistant based in Singapore. Return JSON with a "
         "route key. Use singapore_tomorrow for tomorrow's weather or rain forecast in Singapore "
-        "or when no location is named. Use search for other requests needing current or external "
-        "information, including current temperatures, stock prices, recent news, and explicit "
+        "or when no location is named. Use singapore_headlines for a broad request for today's "
+        "news or latest headlines in Singapore, with no specific topic. Use news for other current headlines or recent news stories. "
+        "Use search for other requests needing current or external "
+        "information, including current temperatures, stock prices, and explicit "
         "requests to look something up. Use local for general explanations, writing and questions "
         "that can be answered from the question alone. Do not answer the question."
     )
@@ -35,7 +37,7 @@ def choose_lookup(question: str) -> str:
         route = json.loads(output)["route"]
     except (ValueError, TypeError, KeyError) as error:
         raise RuntimeError("Could not decide whether to look this up. Try the one-question search toggle.") from error
-    if route not in ("local", "search", "singapore_tomorrow"):
+    if route not in ("local", "search", "news", "singapore_tomorrow", "singapore_headlines"):
         raise RuntimeError("Could not decide whether to look this up. Try the one-question search toggle.")
     return route
 
