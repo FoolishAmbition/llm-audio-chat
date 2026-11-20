@@ -10,6 +10,11 @@ from assistant_app.window import AssistantWindow
 
 
 if __name__ == "__main__":
+    if sys.platform == "win32":
+        from ctypes import windll
+
+        # Set the taskbar identity before Qt creates any windows.
+        windll.shell32.SetCurrentProcessExplicitAppUserModelID("FoolishAmbition.LocalVoiceAssistant")
     app = QApplication(sys.argv)
     app.setApplicationName("Local Voice Assistant")
     icon_path = Path(__file__).with_name("assets") / "voice-assistant.ico"
