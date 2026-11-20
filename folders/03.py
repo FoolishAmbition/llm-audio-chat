@@ -1,10 +1,9 @@
-from fastrtc import ReplyOnPause, Stream, AdditionalOutputs
+from fastrtc import ReplyOnPause, Stream, AdditionalOutputs, get_tts_model
 import numpy as np
 from numpy.typing import NDArray
 
 from dotenv import load_dotenv
 from groq import Groq
-from elevenlabs import ElevenLabs
 
 import os
 import time
@@ -13,7 +12,7 @@ import wave
 load_dotenv()
 
 groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-tts_client = ElevenLabs(api_key=os.getenv("ELEVENLABS_API_KEY"))
+tts_client = get_tts_model(model="kokoro")
 
 
 def audio_to_wav_file(audio_data, sample_rate):
@@ -96,16 +95,7 @@ def response(
 
     print(response_text)
 
-    # Fall back to ElevenLabs for reliable TTS
-    print("Using ElevenLabs for text-to-speech")
-    for chunk in tts_client.text_to_speech.convert_as_stream(
-        text=response_text,
-        voice_id="JBFqnCBsd6RMkjVDRZzb",
-        model_id="eleven_multilingual_v2",
-        output_format="pcm_24000",
-    ):
-        audio_array = np.frombuffer(chunk, dtype=np.int16).reshape(1, -1)
-        yield (24000, audio_array)
+    yield from tts_client.stream_tts_sync(response_text)
 
 
 stream = Stream(
@@ -113,7 +103,7 @@ stream = Stream(
     modality="audio",
     mode="send-receive",
     ui_args={
-        "title": "LLM Voice Chat (Powered By Groq, ElevenLabs, and WebRTC ⚡️)"},
+        "title": "LLM Voice Chat (Powered by Groq, Kokoro, and WebRTC ⚡️)"},
 )
 
 stream.ui.launch()

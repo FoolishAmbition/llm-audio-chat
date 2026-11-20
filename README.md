@@ -5,5 +5,5 @@ Features
 - 🎙️ Real-time voice input using microphone
 - 🧠 Speech-to-text powered by **Groq + OpenAI Whisper**
 - 💬 LLM response generation (Groq)
-- 🔊 AI voice synthesis with **ElevenLabs** / **Kokoro**
+- 🔊 AI voice synthesis with local **Kokoro**
 - ⚡ Powered by **FastRTC** for ultra-low-latency audio streaming
