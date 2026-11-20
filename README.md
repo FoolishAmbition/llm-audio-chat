@@ -5,7 +5,8 @@ Real-Time LLM Voice Chat with Python, FastRTC, and Open Source AI
 
 | File | Purpose |
 | --- | --- |
-| `desktop_assistant.py` | Windows desktop assistant for voice and text. |
+| `desktop_assistant.py` | Windows desktop entry point used by the launcher and shortcut. |
+| `assistant_app/` | Desktop window, settings, audio capture, turn processing, and local and web services. |
 | `demos/microphone_loopback.py` | Microphone loopback demo. |
 | `demos/local_speech_chat.py` | Local voice chat with Faster Whisper, Ollama, and Kokoro. |
 | `demos/groq_whisper_chat.py` | Voice chat with Groq Whisper transcription, Groq replies, and Kokoro playback. |
@@ -31,6 +32,10 @@ Under **Words to recognize**, enter names or terms Whisper often mishears, separ
 Use **Set up your voice** to read practice phrases, replay each clip, and correct what Whisper heard. **Approve and save sample** saves a WAV and its exact transcript to the local app data folder shown at the end of setup. Skipping, re-recording, or closing discards unapproved clips. The saved samples are a dataset for later fine-tuning.
 
 Voice setup includes 20 English prompts and resumes with the phrases you have yet to approve. **Voice profile** shows whether saved vocabulary is loaded, how many recordings you approved, and which Whisper model is selected.
+
+Turn on **Search the web for next question** before speaking or typing to search public engines and show source links below the reply. Search switches off after that turn. Only the question text is sent to search; Ollama still generates the reply locally. Search needs internet access and can fail if public engines are unavailable. No account, API key, or separate search server is required.
+
+Enable **Automatic web lookup** to let local Ollama decide when a question needs current information. This setting is off by default and is remembered after you change it. For tomorrow's weather, the app uses the public NEA forecast when you ask about Singapore or leave the location unspecified. For other online questions, the app can send the current question text to public search engines. General questions can still be answered locally.
 
 ## Run the browser demo
 

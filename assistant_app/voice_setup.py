@@ -1,6 +1,5 @@
 import json
 import wave
-from math import gcd
 from pathlib import Path
 from uuid import uuid4
 
@@ -8,7 +7,8 @@ import numpy as np
 import sounddevice as sd
 from PySide6.QtCore import QStandardPaths, QThread, Signal
 from PySide6.QtWidgets import QDialog, QLabel, QPlainTextEdit, QPushButton, QVBoxLayout
-from scipy.signal import resample_poly
+
+from .speech import for_whisper
 
 PROMPTS = (
     "What should I work on first today?",
@@ -85,8 +85,7 @@ class ReviewWorker(QThread):
 
     def run(self):
         try:
-            divisor = gcd(self.rate, 16000)
-            audio = resample_poly(self.audio, 16000 // divisor, self.rate // divisor)
+            audio = for_whisper(self.audio, self.rate)
             self.reviewed.emit(self.recognize(audio))
         except Exception as error:
             self.failed.emit(str(error))

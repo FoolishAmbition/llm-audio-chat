@@ -1,60 +1,20 @@
 import argparse
-import json
-from urllib.error import HTTPError, URLError
-from urllib.request import Request, urlopen
+import sys
+from pathlib import Path
 
 import gradio as gr
 import numpy as np
 from fastrtc import AdditionalOutputs, ReplyOnPause, Stream, get_tts_model
-from faster_whisper import WhisperModel
 
-OLLAMA_URL = "http://127.0.0.1:11434/api/chat"
-MODEL = "qwen2.5:7b"
+if __package__ in (None, ""):
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-
-def generate_reply(messages: list[dict[str, str]], max_tokens: int = 160) -> str:
-    payload = {
-        "model": MODEL,
-        "messages": [
-            {"role": "system", "content": "You are a helpful personal assistant. Answer clearly and briefly so your replies are easy to listen to."},
-            *messages,
-        ],
-        "stream": False,
-        "options": {"num_predict": max_tokens},
-    }
-    request = Request(
-        OLLAMA_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    try:
-        with urlopen(request, timeout=30) as response:
-            return json.load(response)["message"]["content"]
-    except HTTPError as error:
-        if error.code == 404:
-            raise gr.Error(f"Download the local model with: ollama pull {MODEL}") from error
-        raise gr.Error(f"Ollama returned an error (HTTP {error.code}).") from error
-    except (URLError, TimeoutError) as error:
-        raise gr.Error("Make sure Ollama is running, then try again.") from error
-
-
-def transcribe(speech_recognizer: WhisperModel, samples: np.ndarray, hotwords: str = "") -> str:
-    if samples.size == 0:
-        return ""
-
-    # FastRTC supplies 16 kHz audio. Whisper expects normalized mono samples.
-    waveform = samples.reshape(-1).astype(np.float32)
-    if samples.dtype == np.int16:
-        waveform /= 32768.0
-    segments, _ = speech_recognizer.transcribe(
-        waveform, language="en", beam_size=1, condition_on_previous_text=False,
-        hotwords=hotwords or None,
-    )
-    return " ".join(segment.text.strip() for segment in segments).strip()
+from assistant_app.ollama import generate_reply
+from assistant_app.speech import load_recognizer, transcribe
 
 
 def build_demo(whisper_model: str = "medium") -> Stream:
-    speech_recognizer = WhisperModel(whisper_model, device="cpu", compute_type="int8")
+    speech_recognizer = load_recognizer(whisper_model)
     voice = get_tts_model("kokoro")
 
     def respond(audio: tuple[int, np.ndarray], *ui_inputs):
@@ -72,7 +32,10 @@ def build_demo(whisper_model: str = "medium") -> Stream:
         messages.append({"role": "user", "content": transcript})
         yield AdditionalOutputs(messages)
 
-        reply = generate_reply(messages)
+        try:
+            reply = generate_reply(messages)
+        except RuntimeError as error:
+            raise gr.Error(str(error)) from error
         yield AdditionalOutputs([*messages, {"role": "assistant", "content": reply}])
         yield from voice.stream_tts_sync(reply)
 

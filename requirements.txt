@@ -1,3 +1,4 @@
+ddgs
 fastrtc[tts,vad]
 faster-whisper
 groq
