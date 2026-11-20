@@ -1,0 +1,8 @@
+fastrtc[tts,vad]
+faster-whisper
+groq
+numpy
+PySide6
+python-dotenv
+scipy
+sounddevice
